@@ -1,9 +1,10 @@
 from flask import Flask, request, jsonify, Response
-import csv,io
+import csv,io,os
 from app.errors import DomainError
 from app.reader import decode
 from app.pipeline import calculate
 from app.store import save, latest, history, review, get_run
+from app.fx import load_snapshot, FXError
 from app.web import bp as web
 
 from app.modules.m1_receiving.handler import bp as bp1
@@ -58,6 +59,13 @@ def run():
     return jsonify(save(calculate(text)))
 @app.route('/api/runs/<ident>')
 def run_detail(ident): return jsonify(get_run(ident))
+@app.route('/api/fx')
+def fx_snapshot():
+    try:
+        snapshot=load_snapshot(os.environ.get('FX_SOURCE'))
+    except FXError as error:
+        return jsonify({'code':error.code,'message':error.message}),error.status
+    return jsonify({'base':snapshot['base'],'source':snapshot['source'],'as_of':snapshot['as_of'],'rates':snapshot['rates']})
 @app.route('/api/history')
 def runs(): return jsonify(history())
 @app.route('/api/review',methods=['POST'])

@@ -1,2 +1,6 @@
 {% extends 'base.html' %}
-{% block stage_visual %}{% for r in current.rows %}<div class="terminal-line"><span>{{r["场景"]}}</span>{{r["新增覆盖_度"]}}°</div>{% endfor %}{% endblock %}
+{% block stage_visual %}
+<div class="terminal-line"><span>汇率快照</span>{{current.metrics|selectattr(0,'equalto','汇率来源')|map(attribute=1)|first|default('回退旧版')}}</div>
+{% if current.fx_status and current.fx_status!='snapshot' %}<div class="terminal-line sev--severe"><span>FX状态</span>{{current.fx_message or '载入失败，沿用旧版候选'}}</div>{% endif %}
+{% for r in current.rows %}<div class="terminal-line" title="下单汇率 {{r['下单汇率']}}｜重估差额 {{r['重估差额_CNY']}} CNY"><span>{{r["场景"]}} · {{r["采购状态"]}}</span>{{r['原币金额']}} {{r['币种']}} → {{r['折算金额_CNY']}} CNY{% if r['重估差额_CNY']!='0.00' %} <em class="sev--severe">Δ {{r['重估差额_CNY']}}</em>{% endif %}</div>{% endfor %}
+{% endblock %}

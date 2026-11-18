@@ -13,7 +13,7 @@
 | M3 云区剔除 | 运行云区剔除并复核证据 | `POST /api/m3`；`/work/3` | `app/modules/m3_cloud/rules.py` | `tests/test_m3.py` |
 | M4 覆盖并集 | 运行覆盖并集并复核证据 | `POST /api/m4`；`/work/4` | `app/modules/m4_union/rules.py` | `tests/test_m4.py` |
 | M5 缺口定位 | 运行缺口定位并复核证据 | `POST /api/m5`；`/work/5` | `app/modules/m5_gaps/rules.py` | `tests/test_m5.py` |
-| M6 采购候选 | 运行采购候选并复核证据 | `POST /api/m6`；`/work/6` | `app/modules/m6_purchase/rules.py` | `tests/test_m6.py` |
+| M6 采购候选 | 运行采购候选并复核证据（多币种按报价日期快照折算，确认单锁定） | `POST /api/m6`；`/work/6`；`GET /api/fx` | `app/modules/m6_purchase/rules.py`、`app/fx.py`、`app/store.py` | `tests/test_m6.py`、`tests/test_m6_currency.py`、`tests/test_purchase_orders.py` |
 | M7 交付核验 | 运行交付核验并复核证据 | `POST /api/m7`；`/work/7` | `app/modules/m7_delivery/rules.py` | `tests/test_m7.py` |
 
 ## 陷阱登记
@@ -28,6 +28,10 @@
 | TRAP-22 | 别名等价类 | 静默覆盖或误计 | 显式裁决并保留证据 | `app/modules/m2_coordinates/rules.py` | `tests/test_m2.py::test_alias_equivalence` |
 | TRAP-23 | 跨日界线 | 静默覆盖或误计 | 显式裁决并保留证据 | `app/modules/m2_coordinates/rules.py` | `tests/test_m2.py::test_dateline_split` |
 | TRAP-25 | 版本有效性 | 静默覆盖或误计 | 显式裁决并保留证据 | `app/modules/m2_coordinates/rules.py` | `tests/test_m2.py::test_newest_version_rules` |
+| TRAP-26 | 多币种混用 | 按最新汇率重算改掉已确认成本，或只留原币无法比较 | 按报价日期取汇率快照折算；已确认单锁定原币与下单汇率，重估差额只读 | `app/fx.py`、`app/modules/m6_purchase/rules.py` | `tests/test_m6_currency.py`、`tests/test_purchase_orders.py` |
+| TRAP-27 | 汇率源失败 | 失败即中断或用空值污染候选 | 同原文有旧批次则整体回退旧版候选，否则隔离外币报价 | `app/modules/m6_purchase/service.py` | `tests/test_purchase_orders.py::test_failure_keeps_previous_candidates` |
+| TRAP-28 | 迟到旧报价 | 新到的便宜报价倒退已确认采购单 | 已确认场景的后续报价以STALE_QUOTE隔离，台账不可变 | `app/modules/m6_purchase/rules.py`、`app/store.py` | `tests/test_purchase_orders.py::test_late_quote_cannot_reverse_confirmed_order` |
+| TRAP-29 | 批次重试 | 重试产生重复采购单 | run_id幂等键加采购单主键(run_id,canonical)去重 | `app/store.py` | `tests/test_purchase_orders.py::test_retry_same_batch_creates_no_extra_purchase_orders` |
 
 ## 对账规则
 

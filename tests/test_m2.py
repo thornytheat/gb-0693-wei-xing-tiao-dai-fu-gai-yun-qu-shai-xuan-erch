@@ -23,4 +23,4 @@ def test_quarantined_alias_cannot_merge_good_scenes(raw):
     out=io.StringIO();writer=csv.DictWriter(out,fieldnames=list(bad));writer.writeheader();writer.writerows(records+[bad])
     baseline=calculate(raw);result=calculate(out.getvalue())
     assert {r['canonical'] for r in baseline['scenes']}=={r['canonical'] for r in result['scenes']}
-    assert len(result['scenes'])==42 and sum(q['原因码']=='MISSING' for q in result['quarantine'])==2
+    assert len(result['scenes'])==43 and sum(q['原因码']=='MISSING' for q in result['quarantine'])==2

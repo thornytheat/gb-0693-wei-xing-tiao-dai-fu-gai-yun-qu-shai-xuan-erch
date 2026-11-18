@@ -1,5 +1,6 @@
 from app.domain import split,aliases
 from app.numeric import number
+from app.fx import parse_price, quote_day
 from app.errors import DomainError
 from app.reasons import isolate
 def apply(ctx):
@@ -10,11 +11,11 @@ def apply(ctx):
             if not r['scene']: raise DomainError('MISSING','场景编号为空')
             if bool(r['cloud_w'])!=bool(r['cloud_e']): raise DomainError('CLOUD','云区端点缺失')
             cloud=split(r['cloud_w'],r['cloud_e']) if r['cloud_w'] else []
-            price=number(r['price'])
-            if price<0:raise DomainError('RANGE','价格不能为负')
+            price,currency=parse_price(r['price'])
+            day=quote_day(r['captured'])
             version=int(r['version'])
             if version<1:raise ValueError()
-            candidates.append({**r,'spans':spans,'cloud':cloud,'price_n':price,'version_n':version})
+            candidates.append({**r,'spans':spans,'cloud':cloud,'price_n':price,'currency':currency,'quote_date':day,'version_n':version})
         except DomainError as e:isolate(ctx,r,e.code,e.message)
         except ValueError:isolate(ctx,r,'VERSION','版本必须为正整数')
     names=aliases(candidates)
@@ -23,7 +24,7 @@ def apply(ctx):
         groups.setdefault(canonical,[]).append({**r,'canonical':canonical})
     for key,items in sorted(groups.items()):
         version=max(r['version_n'] for r in items);top=[r for r in items if r['version_n']==version]
-        fingerprints={(tuple(r['spans']),tuple(r['cloud']),r['price_n'],r['quality']) for r in top}
+        fingerprints={(tuple(r['spans']),tuple(r['cloud']),r['price_n'],r['currency'],r['quality']) for r in top}
         if len(fingerprints)>1:
             for r in items:isolate(ctx,r,'CONFLICT','同版本影像元数据冲突')
             continue
